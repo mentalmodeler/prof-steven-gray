@@ -66,7 +66,7 @@ button { cursor: pointer; }
 .site-header {
   position: sticky; top: 0; z-index: 50;
   height: var(--header-h);
-  background: color-mix(in srgb, var(--ground) 92%, transparent);
+  background: color-mix(in srgb, var(--ground) 70%, transparent);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line);
   font-family: var(--font-ui);
@@ -244,14 +244,14 @@ button { cursor: pointer; }
   border-bottom: 1px solid var(--line);
 }
 .pub-list { list-style: none; margin: 0; padding: 0; }
-.pub { padding: 16px 0 14px; max-width: 74ch; }
+.pub { display: flex; flex-direction: column; gap: 8px; padding: 16px 0 14px; max-width: 74ch; }
 .pub + .pub { border-top: 1px dotted var(--line); }
 .pub-cite { margin: 0; font-size: 1rem; line-height: 1.6; }
 .pub-title { font-weight: 600; }
 .author.is-student { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .author.is-match { font-weight: 700; background: color-mix(in srgb, var(--marigold) 35%, transparent); border-radius: 3px; }
-.pub-note { font-family: var(--font-ui); font-size: .85rem; font-weight: 600; margin-left: 6px; padding: 1px 8px; border: 1px solid var(--water); color: var(--water); border-radius: 99px; white-space: nowrap; }
-.pub-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 8px; font-family: var(--font-ui); }
+.pub-note { font-family: var(--font-ui); font-size: .85rem; font-weight: 600; padding: 4px 8px; border: 1px solid var(--water); color: var(--water); border-radius: 14px; align-self: flex-start; line-height: 1.4; }
+.pub-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-family: var(--font-ui); }
 .pub-link { font-weight: 600; font-size: .9rem; margin-right: 6px; }
 .tag-link { min-height: 28px; padding: 0 10px; background: transparent; border: 1px solid var(--line); border-radius: 99px; font-size: .8rem; font-weight: 500; color: var(--ink-soft); }
 .tag-link:hover { border-color: var(--ink-soft); color: var(--ink); }

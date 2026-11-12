@@ -159,13 +159,20 @@
     }
   }
 
+  /* Notes starting "CV citation" are provenance flags for review, not reader-facing text. */
+  function publicNote(e) { return e.note && !e.note.startsWith('CV citation') ? e.note : ''; }
+
+  /* Unpublished manuscripts have no year; they sit in one group above the dated ones. */
+  const IN_PROGRESS = 'In progress';
+  const STATUS_LABEL = { 'in-press': 'in press', 'under-review': 'under review', 'in-revision': 'in revision' };
+
   function indexData(data) {
     const entries = data.publications.entries.map((e, i) => ({ ...e, _i: i }));
     const tagById = new Map(data.publications.tags.map((t) => [t.id, t]));
     const typeById = new Map(data.publications.types.map((t) => [t.id, t]));
     const memberById = new Map(data.people.members.map((m) => [m.id, m]));
     for (const e of entries) {
-      e._hay = [e.authors.map((a) => a.display).join(' '), e.year, e.title, e.venue?.name, (e.editors || []).join(' '), e.publisher, e.note,
+      e._hay = [e.authors.map((a) => a.display).join(' '), e.year, e.title, e.venue?.name, (e.editors || []).join(' '), e.publisher, publicNote(e),
         e.tags.map((t) => tagById.get(t)?.label).join(' ')].filter(Boolean).join(' ').toLowerCase();
     }
     return { entries, tagById, typeById, memberById };
@@ -277,7 +284,7 @@
   function renderPublications(data, sec, ctx) {
     const { entries, tagById, typeById, memberById } = ctx;
     const tagCounts = countBy(entries.flatMap((e) => e.tags));
-    const yearCounts = countBy(entries.map((e) => String(e.year)));
+    const yearCounts = countBy(entries.filter((e) => e.year != null).map((e) => String(e.year)));
     const typeCounts = countBy(entries.map((e) => e.type));
     const personCounts = countBy(entries.flatMap((e) => [...new Set(e.authors.map((a) => a.personId).filter(Boolean))]));
 
@@ -359,9 +366,11 @@
         return;
       }
       const byYear = new Map();
-      for (const e of rows.sort((a, b) => b.year - a.year || (a.sortKey ?? 1e6) - (b.sortKey ?? 1e6) || a._i - b._i)) {
-        if (!byYear.has(e.year)) byYear.set(e.year, []);
-        byYear.get(e.year).push(e);
+      const yr = (e) => e.year ?? Infinity;
+      for (const e of rows.sort((a, b) => yr(b) - yr(a) || (a.sortKey ?? 1e6) - (b.sortKey ?? 1e6) || a._i - b._i)) {
+        const key = e.year ?? IN_PROGRESS;
+        if (!byYear.has(key)) byYear.set(key, []);
+        byYear.get(key).push(e);
       }
       list.replaceChildren(...[...byYear].map(([year, items]) =>
         h('section', { class: 'year-group', 'aria-label': String(year) },
@@ -396,7 +405,7 @@
         cite.append(h('span', { class: 'author' + (a.role === 'student' ? ' is-student' : '') + (state.person && a.personId === state.person ? ' is-match' : '') },
           a.display + (a.role === 'undergraduate' ? '*' : '')));
       });
-      cite.append(e.status === 'in-press' ? ' (in press). ' : ` (${e.year}). `);
+      cite.append(e.year == null || e.status === 'in-press' ? ` (${STATUS_LABEL[e.status] || 'forthcoming'}). ` : ` (${e.year}). `);
       cite.append(h('span', { class: 'pub-title' }, e.title.replace(/([^.?!])$/, '$1.') + ' '));
       const v = e.venue;
       const chapter = e.type === 'book-chapter' || e.type === 'report';
@@ -409,7 +418,6 @@
         cite.append('.');
       }
       if (e.publisher) cite.append(' ' + e.publisher.replace(/([^.])$/, '$1.'));
-      if (e.note) cite.append(h('span', { class: 'pub-note' }, e.note));
     }
     const meta = h('div', { class: 'pub-meta' },
       e.links.map((l) => extLink(l.url, l.label)).map((a) => (a.classList.add('pub-link'), a)),
@@ -418,7 +426,8 @@
         const b = h('button', { class: 'tag-link', type: 'button', 'aria-pressed': String(state.tags.has(id)), 'data-tag': id, onclick: () => toggleTag(id) }, t ? t.label : id);
         return b;
       }));
-    return h('li', { class: 'pub', id: 'pub-' + e.id }, cite, meta);
+    const note = !e.citationOverride && publicNote(e) ? h('span', { class: 'pub-note' }, publicNote(e)) : null;
+    return h('li', { class: 'pub', id: 'pub-' + e.id }, cite, note, meta);
   }
 
   /* ---------- research ---------- */
