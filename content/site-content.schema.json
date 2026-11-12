@@ -1,0 +1,917 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lab.mentalmodeler.com/content/site-content.schema.json",
+  "title": "Human-Environment Interactions Lab site content",
+  "description": "All content for the lab website. CONTENT AND STRUCTURE ONLY (what exists, what belongs together, order, visibility): no layout, columns, colors, section numbers or CSS classes. Visual variants of the site are generated from this file. Array order is display order. Every list item has a stable kebab-case `id` that must never change once assigned. Text fields use a restricted inline-markdown subset (see $defs/inlineText); never write HTML.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "meta",
+    "sections",
+    "home",
+    "news",
+    "people",
+    "publications",
+    "research",
+    "software",
+    "teaching"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of this schema the data conforms to."
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "siteTitle",
+        "labName",
+        "institution",
+        "principalInvestigatorId"
+      ],
+      "description": "Site-wide identity.",
+      "properties": {
+        "siteTitle": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Browser tab / <title> text."
+        },
+        "labName": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "full",
+            "parts"
+          ],
+          "description": "The lab name, both whole and split for stacked wordmarks.",
+          "properties": {
+            "full": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Full name, e.g. 'Human-Environment Interactions Lab'."
+            },
+            "parts": {
+              "type": "array",
+              "minItems": 1,
+              "description": "Name split into ordered words/fragments a wordmark can style individually, e.g. ['Human', 'Environment', 'Interactions', 'Lab'].",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "institution": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Current host institution as it should appear in the page."
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "One-sentence site description for meta tags / search. Null if not yet written."
+        },
+        "principalInvestigatorId": {
+          "$ref": "#/$defs/id",
+          "description": "Id of the PI's entry in people.members."
+        },
+        "favicon": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to favicon file, relative to site root."
+        },
+        "lastUpdated": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date",
+          "description": "ISO date (YYYY-MM-DD) the content was last edited. Update on every edit."
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The page outline, in navigation order: one entry per top-level section. Nav links and numbering are derived from this list. Each `id` matches a top-level content block below. `includes` lists extra content blocks a section shows by default. STRUCTURE ONLY: it says what belongs with what, never how it looks (no sidebar/columns/colors). Variants may follow or ignore it. Do not change `includes` unless asked.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "visible",
+          "includes"
+        ],
+        "properties": {
+          "id": {
+            "enum": [
+              "home",
+              "people",
+              "publications",
+              "research",
+              "software",
+              "teaching"
+            ],
+            "description": "Which content block this section renders."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Navigation / heading label."
+          },
+          "visible": {
+            "type": "boolean",
+            "description": "False hides the section and its nav entry without deleting its content."
+          },
+          "includes": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "news"
+              ]
+            },
+            "description": "Content blocks shown within this section by default, in order. Only blocks that are not themselves sections can be included (currently just `news`; extend this enum when adding a new such block). A block may appear in at most one section's `includes`."
+          }
+        }
+      }
+    },
+    "home": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "body"
+      ],
+      "description": "Home section prose. Recent News is a separate top-level block (`news`) that the Home section includes by default; see sections[].includes.",
+      "properties": {
+        "body": {
+          "$ref": "#/$defs/blocks",
+          "description": "Intro text and images in reading order."
+        }
+      }
+    },
+    "news": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heading",
+        "visible",
+        "items"
+      ],
+      "description": "The 'Recent News' list. Newest first. Independent of any one section: the original page shows it inside Home (see sections[].includes), but variants may place it elsewhere.",
+      "properties": {
+        "heading": {
+          "type": "string",
+          "minLength": 1
+        },
+        "visible": {
+          "type": "boolean",
+          "description": "False hides the news block wherever a variant would show it, without deleting items."
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "text"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "text": {
+                "$ref": "#/$defs/inlineText",
+                "description": "The news item as one inline-markdown sentence or two."
+              },
+              "date": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Date of the news (YYYY, YYYY-MM or YYYY-MM-DD) or null when unknown."
+              }
+            }
+          }
+        }
+      }
+    },
+    "people": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "groups",
+        "members"
+      ],
+      "properties": {
+        "groups": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Ordered groupings of people, rendered as headed lists (e.g. PI, Current graduate students, Former graduate students).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "label",
+              "status"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Group heading, e.g. 'Graduate Students'."
+              },
+              "status": {
+                "enum": [
+                  "current",
+                  "former"
+                ],
+                "description": "Whether members of this group are currently in the lab."
+              },
+              "badge": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Short qualifier shown beside the heading, e.g. 'Current' or 'Former'. Null for none."
+              }
+            }
+          }
+        },
+        "members": {
+          "type": "array",
+          "description": "Every person. Within a group, display order is array order.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "groupId",
+              "role",
+              "bio"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id",
+                "description": "Stable id, conventionally given-family (e.g. 'alison-singer'). Publication authors reference this via personId."
+              },
+              "name": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "display",
+                  "family"
+                ],
+                "properties": {
+                  "display": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Name exactly as shown on the page, including any title (e.g. 'Dr. Steven Gray')."
+                  },
+                  "given": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "family": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "groupId": {
+                "$ref": "#/$defs/id",
+                "description": "Must match an id in people.groups."
+              },
+              "role": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Label shown beside the name, e.g. 'Principal Investigator', 'PhD', 'MS, 2014'. Keep exactly what should be displayed."
+              },
+              "degree": {
+                "enum": [
+                  "PhD",
+                  "MS",
+                  null
+                ],
+                "description": "Degree being pursued/earned, null for the PI."
+              },
+              "graduationYear": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 1950,
+                "maximum": 2100,
+                "description": "Year degree was completed, null if current."
+              },
+              "photo": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/image"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "bio": {
+                "$ref": "#/$defs/blocks",
+                "description": "Biography paragraphs."
+              },
+              "links": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/link"
+                },
+                "description": "Extra links shown with the bio, e.g. the CV. Links already inline in the bio need not be repeated."
+              }
+            }
+          }
+        }
+      }
+    },
+    "publications": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "legend",
+        "types",
+        "tags",
+        "entries"
+      ],
+      "description": "Structured bibliography designed for filtering and regrouping. Structured fields are the source of truth; do not duplicate them into prose.",
+      "properties": {
+        "legend": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "student",
+            "undergraduate"
+          ],
+          "description": "Plain-language explanation of author roles, for display next to the list. Variants choose the visual treatment (underline, asterisk, color).",
+          "properties": {
+            "student": {
+              "type": "string",
+              "description": "What `role: student` means."
+            },
+            "undergraduate": {
+              "type": "string",
+              "description": "What `role: undergraduate` means."
+            }
+          }
+        },
+        "types": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Vocabulary of publication types. Entries reference these ids; add a new type here before using it.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "label"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "tags": {
+          "type": "array",
+          "description": "Controlled topic vocabulary for filtering. Entries reference these ids; add a new tag here before using it. Prefer reusing existing tags.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "label"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "entries": {
+          "type": "array",
+          "description": "All publications. Order is not significant for filtering; variants should sort by `year` (and `sortKey` within a year). The default order here is the original page order (newest year first).",
+          "items": {
+            "$ref": "#/$defs/publication"
+          }
+        }
+      }
+    },
+    "research": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intro",
+        "funding"
+      ],
+      "properties": {
+        "intro": {
+          "$ref": "#/$defs/blocks"
+        },
+        "supportedBy": {
+          "type": "array",
+          "description": "Funding agencies named in the intro prose, as a list for variants that want to show logos/badges.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "funding": {
+          "type": "array",
+          "description": "Research grants.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "status",
+              "startYear",
+              "funder",
+              "title"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "status": {
+                "enum": [
+                  "current",
+                  "past"
+                ],
+                "description": "'past' entries on the source page are labelled 'Selected Past'."
+              },
+              "startYear": {
+                "type": "integer",
+                "minimum": 1950,
+                "maximum": 2100
+              },
+              "endYear": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 1950,
+                "maximum": 2100,
+                "description": "Null when the grant spans one year (startYear only)."
+              },
+              "funder": {
+                "type": "string",
+                "minLength": 1
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Project title."
+              }
+            }
+          }
+        }
+      }
+    },
+    "software": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "tagline",
+        "body"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tagline": {
+          "type": "string",
+          "minLength": 1
+        },
+        "body": {
+          "$ref": "#/$defs/blocks"
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/link"
+          }
+        }
+      }
+    },
+    "teaching": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intro",
+        "courses",
+        "news"
+      ],
+      "description": "Teaching section. Hidden on the current site (see sections[].visible) but content is retained.",
+      "properties": {
+        "intro": {
+          "$ref": "#/$defs/blocks"
+        },
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "code",
+              "title"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Course code, e.g. 'EEOS 122'."
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "note": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "E.g. 'co-taught'."
+              }
+            }
+          }
+        },
+        "news": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "text"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "text": {
+                "$ref": "#/$defs/inlineText"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Stable kebab-case identifier, unique within its collection. Never rename after creation."
+    },
+    "inlineText": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Single-paragraph text. Allowed inline markdown ONLY: *italic*, **bold**, [label](https://url). No HTML, no headings, no lists, no line breaks. Escape a literal asterisk as \\*."
+    },
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "url"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute URL, or a site-relative path for local files (e.g. 'resources/Gray CV.pdf')."
+        },
+        "kind": {
+          "enum": [
+            "article",
+            "pdf",
+            "website",
+            "news",
+            "other"
+          ],
+          "description": "Hint for icon choice."
+        }
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "src",
+        "alt"
+      ],
+      "properties": {
+        "src": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path relative to site root, e.g. 'img/img_1.jpg'."
+        },
+        "alt": {
+          "type": "string",
+          "description": "Accessible description. Empty string only for purely decorative images."
+        },
+        "caption": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "blocks": {
+      "type": "array",
+      "description": "Rich text as an ordered list of blocks. A paragraph break in the source is a new paragraph block.",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "text"
+            ],
+            "properties": {
+              "type": {
+                "const": "paragraph"
+              },
+              "text": {
+                "$ref": "#/$defs/inlineText"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "images"
+            ],
+            "description": "One or more images shown together as a row/gallery.",
+            "properties": {
+              "type": {
+                "const": "images"
+              },
+              "images": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/image"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "author": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "family",
+        "display"
+      ],
+      "description": "One author in citation order.",
+      "properties": {
+        "display": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Author as printed in the citation, e.g. 'Gray, S.' or 'S. Gray'. Keep source wording."
+        },
+        "family": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Family name, for sorting/filtering."
+        },
+        "given": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Given name or initials if known."
+        },
+        "role": {
+          "enum": [
+            "student",
+            "undergraduate",
+            null
+          ],
+          "description": "'student' = graduate student/advisee co-author (underlined on the original page); 'undergraduate' = undergraduate co-author (asterisk). Null for everyone else."
+        },
+        "personId": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/id"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Id of a people.members entry when this author is unambiguously a lab member; enables 'papers by X' filters. Null otherwise."
+        }
+      }
+    },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "year",
+        "status",
+        "peerReviewed",
+        "authors",
+        "title",
+        "tags"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id",
+          "description": "Conventionally firstauthorfamily-year-keyword, e.g. 'gray-2012-trust'."
+        },
+        "type": {
+          "$ref": "#/$defs/id",
+          "description": "Must match an id in publications.types."
+        },
+        "year": {
+          "type": "integer",
+          "minimum": 1950,
+          "maximum": 2100,
+          "description": "Publication year (or expected year for in-press items)."
+        },
+        "sortKey": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Optional tiebreak within a year. Lower sorts first. Null to keep page order."
+        },
+        "status": {
+          "enum": [
+            "published",
+            "in-press"
+          ],
+          "description": "'in-press' for items marked '(in press)' on the source."
+        },
+        "peerReviewed": {
+          "type": "boolean",
+          "description": "True for entries under the 'Refereed/Peer Reviewed' heading."
+        },
+        "authors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/author"
+          },
+          "description": "Authors in citation order."
+        },
+        "editors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Editors of the containing volume, if cited."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Title of the work (article/chapter/book/report). Plain text, no markdown."
+        },
+        "venue": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name"
+              ],
+              "description": "Journal, book, proceedings or report series the work appeared in. For a book entry, name is the book title's publisher series if any; otherwise leave venue null and use publisher.",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Journal / proceedings / containing-book title. Plain text."
+                },
+                "volume": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "issue": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "pages": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Page range or article number as printed."
+                }
+              }
+            }
+          ]
+        },
+        "publisher": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Publisher and place for books/chapters/reports, as printed."
+        },
+        "doi": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^10\\.\\d{4,9}/\\S+$",
+          "description": "Bare DOI (no URL prefix) when known."
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/link"
+          },
+          "description": "External links, e.g. 'View Article'."
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Short editorial note, e.g. 'Cover Article for January 2015'."
+        },
+        "tags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "description": "Topic tags; each must match an id in publications.tags. Use [] if none."
+        },
+        "featured": {
+          "type": "boolean",
+          "description": "Optional: highlight in variants that have a 'selected publications' area."
+        },
+        "citationOverride": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/inlineText"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "ESCAPE HATCH ONLY. A fully formatted citation used verbatim instead of one assembled from the structured fields, for entries too irregular to structure. Leave null/absent normally."
+        }
+      }
+    }
+  }
+}

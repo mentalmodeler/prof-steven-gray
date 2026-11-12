@@ -1,0 +1,96 @@
+// Validates site-content.json against the schema, then runs integrity checks the schema can't express.
+// Usage: node validate.mjs [path/to/site-content.json]   (exit code 1 on any problem)
+import fs from 'node:fs';
+import Ajv2020 from 'ajv/dist/2020.js';
+import addFormats from 'ajv-formats';
+
+const dataPath = process.argv[2] || new URL('../content/site-content.json', import.meta.url);
+const schema = JSON.parse(fs.readFileSync(new URL('../content/site-content.schema.json', import.meta.url), 'utf8'));
+const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+
+const errors = [];
+const fail = (msg) => errors.push(msg);
+
+// 1. JSON Schema
+const ajv = new Ajv2020({ allErrors: true, strict: false });
+addFormats(ajv);
+const validate = ajv.compile(schema);
+if (!validate(data)) {
+  for (const e of validate.errors) fail(`schema: ${e.instancePath || '/'} ${e.message}${e.params ? ' ' + JSON.stringify(e.params) : ''}`);
+}
+
+// 2. Integrity
+const dupes = (label, ids) => {
+  const seen = new Set();
+  for (const id of ids) { if (seen.has(id)) fail(`duplicate id in ${label}: ${id}`); seen.add(id); }
+  return seen;
+};
+
+const safe = (v, d = []) => (Array.isArray(v) ? v : d);
+const members = safe(data.people?.members);
+const groups = safe(data.people?.groups);
+const entries = safe(data.publications?.entries);
+
+const memberIds = dupes('people.members', members.map((m) => m.id));
+const groupIds = dupes('people.groups', groups.map((g) => g.id));
+const typeIds = dupes('publications.types', safe(data.publications?.types).map((t) => t.id));
+const tagIds = dupes('publications.tags', safe(data.publications?.tags).map((t) => t.id));
+dupes('publications.entries', entries.map((e) => e.id));
+dupes('news.items', safe(data.news?.items).map((n) => n.id));
+dupes('research.funding', safe(data.research?.funding).map((f) => f.id));
+dupes('teaching.courses', safe(data.teaching?.courses).map((c) => c.id));
+dupes('sections', safe(data.sections).map((s) => s.id));
+
+if (data.meta && !memberIds.has(data.meta.principalInvestigatorId)) fail(`meta.principalInvestigatorId "${data.meta.principalInvestigatorId}" is not a people.members id`);
+for (const m of members) if (!groupIds.has(m.groupId)) fail(`member ${m.id}: unknown groupId "${m.groupId}"`);
+for (const g of groups) if (!members.some((m) => m.groupId === g.id)) fail(`group ${g.id} has no members`);
+
+const thisYear = new Date().getFullYear();
+for (const e of entries) {
+  if (!typeIds.has(e.type)) fail(`publication ${e.id}: unknown type "${e.type}"`);
+  for (const t of safe(e.tags)) if (!tagIds.has(t)) fail(`publication ${e.id}: unknown tag "${t}"`);
+  for (const a of safe(e.authors)) if (a.personId && !memberIds.has(a.personId)) fail(`publication ${e.id}: unknown personId "${a.personId}"`);
+  if (e.year > thisYear + 1) fail(`publication ${e.id}: year ${e.year} is in the future`);
+  const pids = safe(e.authors).map((a) => a.personId).filter(Boolean);
+  if (new Set(pids).size !== pids.length) fail(`publication ${e.id}: same personId listed twice`);
+}
+for (const t of safe(data.publications?.tags)) if (!entries.some((e) => safe(e.tags).includes(t.id))) fail(`tag "${t.id}" is unused (remove it or tag entries)`);
+for (const t of safe(data.publications?.types)) if (!entries.some((e) => e.type === t.id)) fail(`type "${t.id}" is unused`);
+
+for (const f of safe(data.research?.funding)) if (f.endYear != null && f.endYear < f.startYear) fail(`funding ${f.id}: endYear before startYear`);
+
+const sectionIds = safe(data.sections).map((s) => s.id);
+const included = new Map();
+for (const s of safe(data.sections)) {
+  for (const b of safe(s.includes)) {
+    if (!(b in data)) fail(`section ${s.id}: includes unknown block "${b}"`);
+    if (sectionIds.includes(b)) fail(`section ${s.id}: includes "${b}", which is itself a section`);
+    if (included.has(b)) fail(`block "${b}" is included by both "${included.get(b)}" and "${s.id}"`);
+    included.set(b, s.id);
+  }
+}
+for (const id of ['home', 'people', 'publications', 'research', 'software', 'teaching']) {
+  if (!sectionIds.includes(id)) fail(`sections is missing "${id}"`);
+}
+
+// Disallow raw HTML in text fields.
+const htmlish = /<\/?[a-z][^>]*>/i;
+(function walk(v, path) {
+  if (typeof v === 'string') { if (htmlish.test(v)) fail(`raw HTML at ${path}: ${v.slice(0, 60)}`); }
+  else if (Array.isArray(v)) v.forEach((x, i) => walk(x, `${path}[${i}]`));
+  else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) walk(x, `${path}.${k}`);
+})(data, '$');
+
+if (errors.length) {
+  console.error(`INVALID: ${errors.length} problem(s)`);
+  for (const e of errors) console.error(' - ' + e);
+  process.exit(1);
+}
+// Script-loadable copy for pages opened straight from disk (file:// blocks fetch of the JSON).
+// Generated only from the real data file after a clean pass; never edit it by hand.
+if (!process.argv[2]) {
+  const out = new URL('../content/site-content.js', import.meta.url);
+  fs.writeFileSync(out, `// Generated by validate.mjs from site-content.json. Do not edit.\nwindow.SITE_CONTENT = ${JSON.stringify(data)};\n`);
+}
+
+console.log(`OK: ${entries.length} publications, ${members.length} people, ${safe(data.research?.funding).length} funding rows, ${safe(data.news?.items).length} news items`);

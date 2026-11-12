@@ -1,0 +1,14 @@
+{
+  "name": "prof-steven-gray",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate.mjs",
+    "verify": "node scripts/one-time-import/verify-extraction.mjs"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "cheerio": "^1.0.0"
+  }
+}

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Human-Environment Interactions Lab</title>
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="favicon.ico">
+  <style>
+    body { font: 1.05rem/1.6 system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; padding: 0 1rem; }
+    li { margin: .4rem 0; }
+  </style>
+</head>
+<body>
+  <h1>Human-Environment Interactions Lab</h1>
+  <p id="msg">Loading…</p>
+  <ul id="list"></ul>
+  <noscript><p>This page needs JavaScript. <a href="variants/concept-map/">Open the concept map site.</a></p></noscript>
+  <script src="variants/variants.js"></script>
+  <script>
+    // Redirect to the default variant, keeping query string (filters) and hash. Falls back to a list.
+    (function () {
+      var all = window.SITE_VARIANTS || [];
+      var def = all.filter(function (v) { return v.default; })[0];
+      if (def) { location.replace('variants/' + def.id + '/' + location.search + location.hash); return; }
+      document.getElementById('msg').textContent = all.length ? 'Choose a version of the site:' : 'No site variants are registered.';
+      var ul = document.getElementById('list');
+      all.forEach(function (v) {
+        var li = document.createElement('li'), a = document.createElement('a');
+        a.href = 'variants/' + v.id + '/'; a.textContent = v.label; li.appendChild(a); ul.appendChild(li);
+      });
+    })();
+  </script>
+</body>
+</html>
